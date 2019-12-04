@@ -1,6 +1,6 @@
 module CocosGoSDKTool
 
-replace CocosSDK => github.com/Cocos-BCX/Go-SDK v0.0.0-20191118024115-8df676db900f
+replace CocosSDK => github.com/Cocos-BCX/Go-SDK master
 
 go 1.13
 
