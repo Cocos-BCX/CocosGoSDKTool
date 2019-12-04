@@ -9,9 +9,33 @@ import (
 
 func TestInitSdk(t *testing.T) {
 	sdk.InitSDK("test.cocosbcx.net", 80, false)
-	sdk.Wallet.ImportAccount("gggg1", "12345678")
-	sdk.Wallet.SetDefaultAccount("gggg1", "12345678")
+	sdk.Wallet.ImportAccount("ggggxxx", "12345678")
+	sdk.Wallet.SetDefaultAccount("ggggxxx", "12345678")
 	t.Log(rpc.GetDynamicGlobalProperties())
+}
+func TestGetTransaction(t *testing.T) {
+	tx, err := GetTransaction("24aa4b89e63d5d339d85179ab896ff44e37b72f253923efe7aac230014813ad3")
+	t.Log(err)
+	byte_s, err := json.Marshal(tx)
+	if err == nil {
+		t.Log(string(byte_s))
+	}
+}
+func TestDeserialize(t *testing.T) {
+	var hex_str string = "1ae3653a3105800f5722c5bda2b55530d0e9e8654314e2f3dc6d2b010da641c5cd27a29b23cab399e75d010063490000000000003000000000000000a0860100000000000000000000000000010103679b27673fea2846434ca659ffe65ea8c0ec6e751aa9c326bbfbfcf8affa673b0354702c8f8a62a9b0ec52ff6ef3d439cad11ddec8a105af00deab548788ab56fd99f3124df33a81401047e1947d6e104ec19ac290bb159e71960000"
+	tx, err := Deserialize(hex_str)
+	byte_s, err := json.Marshal(tx)
+	if err == nil {
+		t.Log(string(byte_s))
+	}
+}
+
+func TestDeserializeTransactions(t *testing.T) {
+	sign_tx, _ := DeserializeTransactions("1ae3653a3105800f5722c5bda2b55530d0e9e8654314e2f3dc6d2b010da641c5cd27a29b23cab299e75d010063490000000000003000000000000000a0860100000000000000000000000000010004787878780000")
+	byte_s, err := json.Marshal(sign_tx)
+	if err == nil {
+		t.Log(string(byte_s))
+	}
 }
 
 func TestTxsForAddress(t *testing.T) {
@@ -54,27 +78,10 @@ func TestBalanceForAddress(t *testing.T) {
 	}
 }
 
-func TestDeserializeTransactions(t *testing.T) {
-	sign_tx, _ := DeserializeTransactions("c1ac4bb7bd7d94874a1cb98b39a8a582421d03d022dfa4be8c70567076e03ad0f83b7f4d06b01d3ec85d01001a0000000000000016000000000000008096980000000000040000000000000001030ed1f4745aeb7194e1eea53bf6c4a217ba3b8f7d63ebad2e22543b99469bb03203d53f078f6ea92d7d33a06bf0e23569e376baf516ed0f5efe9a1b714be5f031d16a23d583d67366d710661cd4569de5a081559c97e382a360700000")
-	byte_s, err := json.Marshal(sign_tx)
-	if err == nil {
-		t.Log(string(byte_s))
-	}
-}
-
 func TestSignTransaction(t *testing.T) {
 	tx, err := SignTransaction("c1ac4bb7bd7d94874a1cb98b39a8a582421d03d022dfa4be8c70567076e03ad0486711d2c551899dc85d010016000000000000001a00000000000000a08601000000000000000000000000000103d53f078f6ea92d7d33a06bf0e23569e376baf516ed0f5efe9a1b714be5f031d1030ed1f4745aeb7194e1eea53bf6c4a217ba3b8f7d63ebad2e22543b99469bb032b4d412ed0c8e38561077883f0dfb4c3f8e1068c92ef3e9653f0000",
 		[]string{"202c76ab413de66315922a95c65b0dc77073bf1f9a7e809b0aa51db9f1592e359c2de34ed115c039d356ca573e0d4dc818a258acfc0af48c44c6e4c8d2c9d57508"})
 
-	byte_s, err := json.Marshal(tx)
-	if err == nil {
-		t.Log(string(byte_s))
-	}
-}
-
-func TestGetTransaction(t *testing.T) {
-	tx, err := GetTransaction("0b40101202a469ae6700c5eca2512cb2ecb8fcd309949410240af465dc67d143")
-	t.Log(err)
 	byte_s, err := json.Marshal(tx)
 	if err == nil {
 		t.Log(string(byte_s))

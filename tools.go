@@ -91,31 +91,43 @@ func DeserializeTransactions(tx_raw_hex string) (sign_tx *wallet.Signed_Transact
 			AmountData:     Amount{Amount: uint64(amount), AssetID: createAssetId(amount_asset_id)},
 		}
 		if byte_s[0] != 0 {
-			//移除公钥信息
-			from_bytes := make([]byte, 33)
-			copy(from_bytes, byte_s[1:34])
-			byte_s = byte_s[34:]
-			to_bytes := make([]byte, 33)
-			copy(to_bytes, byte_s[:33])
-			byte_s = byte_s[33:]
-			//移除nonce信息
-			nonce_bytes := byte_s[:8]
-			byte_s = byte_s[8:]
-			m := &Memo{
-				From:  wallet.PublicKey(from_bytes).ToBase58String(),
-				To:    wallet.PublicKey(to_bytes).ToBase58String(),
-				Nonce: uint64(UintVar(nonce_bytes))}
-			msg_len_bytes := []byte{byte_s[0]}
+			byte_s = byte_s[1:]
+			if byte_s[0] == 0 {
+				byte_s = byte_s[1:]
+				memo_len_bytes := []byte{byte_s[0]}
+				for i := 0; byte_s[i] > 0x80; i++ {
+					memo_len_bytes = append(op_len_bytes, byte_s[i+1])
+				}
+				memo_len := Intvar(memo_len_bytes)
+				memo_str_byte := byte_s[len(op_len_bytes) : len(op_len_bytes)+int(memo_len)]
+				tx.MemoData = &OpMemo{Int(0), String(string(memo_str_byte))}
+			} else if byte_s[0] == 1 {
+				//移除公钥信息
+				from_bytes := make([]byte, 33)
+				copy(from_bytes, byte_s[1:34])
+				byte_s = byte_s[34:]
+				to_bytes := make([]byte, 33)
+				copy(to_bytes, byte_s[:33])
+				byte_s = byte_s[33:]
+				//移除nonce信息
+				nonce_bytes := byte_s[:8]
+				byte_s = byte_s[8:]
+				m := &Memo{
+					From:  wallet.PublicKey(from_bytes).ToBase58String(),
+					To:    wallet.PublicKey(to_bytes).ToBase58String(),
+					Nonce: uint64(UintVar(nonce_bytes))}
+				msg_len_bytes := []byte{byte_s[0]}
 
-			for n := 0; byte_s[n] > 0x80; n++ {
-				msg_len_bytes = append(msg_len_bytes, byte_s[n+1])
+				for n := 0; byte_s[n] > 0x80; n++ {
+					msg_len_bytes = append(msg_len_bytes, byte_s[n+1])
+				}
+				byte_s = byte_s[len(msg_len_bytes):]
+				//移除msg信息
+				msg_len := Intvar(msg_len_bytes)
+				m.Message = hex.EncodeToString(byte_s[:msg_len])
+				byte_s = byte_s[msg_len:]
+				tx.MemoData = &OpMemo{Int(1), m}
 			}
-			byte_s = byte_s[len(msg_len_bytes):]
-			//移除msg信息
-			msg_len := Intvar(msg_len_bytes)
-			m.Message = hex.EncodeToString(byte_s[:msg_len])
-			byte_s = byte_s[msg_len:]
-			tx.MemoData = m
 		} else {
 			tx.MemoData = nil
 		}
@@ -127,6 +139,9 @@ func DeserializeTransactions(tx_raw_hex string) (sign_tx *wallet.Signed_Transact
 func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 	var byte_s []byte
 	tx_hash := UnsignedTxHash(tx_raw_hex)
+	/*if tx, err = GetTransaction(tx_hash); err == nil {
+		return
+	}*/
 	//去除chainId
 	tx_raw_hex = tx_raw_hex[64:]
 	byte_s, err = hex.DecodeString(tx_raw_hex)
@@ -155,22 +170,34 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 			amount := UintVar(byte_s[0:8])
 			amount_asset_id_bytes := byte_s[8:16]
 			byte_s = byte_s[16:]
-			c_fees := sdk.GetCurrentFees()
-			fee_amount := c_fees[OP_TRANSFER].Get("fee").Int()
+			//c_fees := sdk.GetCurrentFees()
+			//fee_amount := c_fees[OP_TRANSFER].Get("fee").Int()
 			if byte_s[0] != 0 {
-				//移除公钥信息
-				byte_s = byte_s[67:]
-				//移除nonce信息
-				byte_s = byte_s[8:]
-				msg_len_bytes := []byte{byte_s[0]}
-				for n := 0; byte_s[n] > 0x80; n++ {
-					msg_len_bytes = append(msg_len_bytes, byte_s[n+1])
+				byte_s = byte_s[1:]
+				if byte_s[0] == 0 {
+					byte_s = byte_s[1:]
+					memo_len_bytes := []byte{byte_s[0]}
+					for i := 0; byte_s[i] > 0x80; i++ {
+						memo_len_bytes = append(op_len_bytes, byte_s[i+1])
+					}
+					memo_len := Intvar(memo_len_bytes)
+					byte_s = byte_s[len(op_len_bytes)+int(memo_len):]
+					//fee_amount += c_fees[OP_TRANSFER].Get("price_per_kbyte").Int() * (2 + int64(len(memo_len_bytes)) + memo_len) / 1024
+				} else if byte_s[0] == 1 {
+					//移除公钥信息
+					byte_s = byte_s[67:]
+					//移除nonce信息
+					byte_s = byte_s[8:]
+					msg_len_bytes := []byte{byte_s[0]}
+					for n := 0; byte_s[n] > 0x80; n++ {
+						msg_len_bytes = append(msg_len_bytes, byte_s[n+1])
+					}
+					byte_s = byte_s[len(msg_len_bytes):]
+					//移除msg信息
+					msg_len := Intvar(msg_len_bytes)
+					byte_s = byte_s[msg_len:]
+					//fee_amount += c_fees[OP_TRANSFER].Get("price_per_kbyte").Int() * (76 + int64(len(msg_len_bytes)) + msg_len) / 1024
 				}
-				byte_s = byte_s[len(msg_len_bytes):]
-				//移除msg信息
-				msg_len := Intvar(msg_len_bytes)
-				byte_s = byte_s[msg_len:]
-				fee_amount += c_fees[OP_TRANSFER].Get("price_per_kbyte").Int() * (75 + int64(len(msg_len_bytes)) + msg_len) / 1024
 			}
 			amount_asset_id := UintVar(amount_asset_id_bytes)
 			from_id := UintVar(from_bytes)
@@ -182,16 +209,16 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 				Address: from_info.Name,
 				Sn:      amount_asset_id,
 			}
-
-			if fmt.Sprintf("1.3.%d", amount_asset_id) != COCOS_ID {
-				fee := UTXO{
-					Sn:      0,
-					Address: from_info.Name,
-					Value:   fee_amount}
-				inputs = append(inputs, fee)
-			} else {
-				in.Value += fee_amount
-			}
+			/*
+				if fmt.Sprintf("1.3.%d", amount_asset_id) != COCOS_ID {
+					fee := UTXO{
+						Sn:      0,
+						Address: from_info.Name,
+						Value:   fee_amount}
+					inputs = append(inputs, fee)
+				} else {
+					in.Value += fee_amount
+				}*/
 
 			out := UTXO{
 				Value:   amount,

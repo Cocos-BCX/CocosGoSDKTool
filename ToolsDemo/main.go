@@ -2,10 +2,11 @@
 package main
 
 import (
-	tools "CocosGoSDKTool"
-	sdk "CocosSDK"
 	"fmt"
 	"log"
+
+	tools "CocosGoSDKTool"
+	sdk "CocosSDK"
 )
 
 func main() {
