@@ -8,13 +8,13 @@ import (
 )
 
 func TestInitSdk(t *testing.T) {
-	sdk.InitSDK("test.cocosbcx.net", 80, false)
+	sdk.InitSDK("test.cocosbcx.net", true)
 	sdk.Wallet.ImportAccount("ggggxxx", "12345678")
 	sdk.Wallet.SetDefaultAccount("ggggxxx", "12345678")
 	t.Log(rpc.GetDynamicGlobalProperties())
 }
 func TestGetTransaction(t *testing.T) {
-	tx, err := GetTransaction("24aa4b89e63d5d339d85179ab896ff44e37b72f253923efe7aac230014813ad3")
+	tx, err := GetTransaction("4432a6f92b95ade128f52e378f376eec87bfa50230c26584974554d1ab730c66")
 	t.Log(err)
 	byte_s, err := json.Marshal(tx)
 	if err == nil {
@@ -71,13 +71,25 @@ func TestGetblocktxs(t *testing.T) {
 }
 
 func TestBalanceForAddress(t *testing.T) {
-	balances := BalanceForAddress("ximenyan1111")
+	balances := BalanceForAddress("ggggxxx")
 	byte_s, err := json.Marshal(balances)
 	if err == nil {
 		t.Log(string(byte_s))
 	}
 }
 
+func TestBalanceForAddressForCoinCode(t *testing.T) {
+	balances := BalanceForAddressForCoinCode("test1", "COCOS")
+	byte_s, err := json.Marshal(balances)
+	if err == nil {
+		t.Log(string(byte_s))
+	}
+	balances = BalanceForAddressForCoinCode("test1", "1.3.1")
+	byte_s, err = json.Marshal(balances)
+	if err == nil {
+		t.Log(string(byte_s))
+	}
+}
 func TestSignTransaction(t *testing.T) {
 	tx, err := SignTransaction("c1ac4bb7bd7d94874a1cb98b39a8a582421d03d022dfa4be8c70567076e03ad0486711d2c551899dc85d010016000000000000001a00000000000000a08601000000000000000000000000000103d53f078f6ea92d7d33a06bf0e23569e376baf516ed0f5efe9a1b714be5f031d1030ed1f4745aeb7194e1eea53bf6c4a217ba3b8f7d63ebad2e22543b99469bb032b4d412ed0c8e38561077883f0dfb4c3f8e1068c92ef3e9653f0000",
 		[]string{"202c76ab413de66315922a95c65b0dc77073bf1f9a7e809b0aa51db9f1592e359c2de34ed115c039d356ca573e0d4dc818a258acfc0af48c44c6e4c8d2c9d57508"})
@@ -92,15 +104,6 @@ func TestBuildTransaction(t *testing.T) {
 	hex_str, err := BuildTransaction("gggg2", "ximenyan1111", 1, "COCOS")
 	t.Log(err)
 	t.Log(hex_str)
-}
-
-func TestDeserialize(t *testing.T) {
-	var hex_str string = "c1ac4bb7bd7d94874a1cb98b39a8a582421d03d022dfa4be8c70567076e03ad0d0b340b1ff472a46c95d010016000000000000001a00000000000000a08601000000000000000000000000000103d53f078f6ea92d7d33a06bf0e23569e376baf516ed0f5efe9a1b714be5f031d1030ed1f4745aeb7194e1eea53bf6c4a217ba3b8f7d63ebad2e22543b99469bb0326882e68e442706441093f14bfaecd9e70710b9053d2d27324c0000"
-	tx, err := Deserialize(hex_str)
-	byte_s, err := json.Marshal(tx)
-	if err == nil {
-		t.Log(string(byte_s))
-	}
 }
 
 func TestUnsignedTxHash(t *testing.T) {

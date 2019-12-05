@@ -379,6 +379,23 @@ func BalanceForAddress(address string) *[]rpc.Balance {
 	return sdk.GetAccountBalances(address)
 }
 
+func BalanceForAddressForCoinCode(address string, symbolOrId string) *rpc.Balance {
+	balances := BalanceForAddress(address)
+	if balances == nil {
+		return nil
+	}
+	asset_info := sdk.GetTokenInfoBySymbol(symbolOrId)
+	if asset_info != nil {
+		symbolOrId = string(asset_info.ID)
+	}
+	for _, balance := range *balances {
+		if balance.AssetID == symbolOrId {
+			return &balance
+		}
+	}
+	return nil
+}
+
 func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 	acct_info := rpc.GetAccountInfoByName(address)
 	limit := 50
@@ -572,11 +589,15 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 	return
 }
 
-func BuildTransaction(from, to string, amount float64, symbol ...string) (tx_raw_hex string, err error) {
-	asset_id := "1.3.0"
+func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_hex string, err error) {
+	asset_id := COCOS_ID
 	var tk_info *rpc.TokenInfo
 	from_info := rpc.GetAccountInfoByName(from)
 	to_info := rpc.GetAccountInfoByName(to)
+	if from_info == nil || to_info == nil {
+		err = errors.New("from or to is not exits!!")
+		return
+	}
 	if len(symbol) > 0 {
 		tk_info = rpc.GetTokenInfoBySymbol(symbol[0])
 	} else {
