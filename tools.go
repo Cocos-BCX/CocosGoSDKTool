@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -603,9 +602,11 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	} else {
 		tk_info = rpc.GetTokenInfo(asset_id)
 	}
-	precision := math.Pow10(tk_info.Precision)
+	if tk_info == nil {
+		err = errors.New("asset is not exit!")
+	}
 	t := &Transaction{
-		AmountData:     Amount{Amount: uint64(float64(amount) * precision), AssetID: ObjectId(tk_info.ID)},
+		AmountData:     Amount{Amount: amount, AssetID: ObjectId(tk_info.ID)},
 		ExtensionsData: []interface{}{},
 		From:           ObjectId(from_info.ID),
 		To:             ObjectId(to_info.ID),
@@ -627,7 +628,6 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 		return
 	}
 	byte_s = append(cid, byte_s...)
-	log.Println(byte_s)
 	tx_raw_hex = hex.EncodeToString(byte_s)
 	return
 }

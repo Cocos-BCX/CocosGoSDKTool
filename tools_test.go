@@ -101,7 +101,7 @@ func TestSignTransaction(t *testing.T) {
 }
 
 func TestBuildTransaction(t *testing.T) {
-	hex_str, err := BuildTransaction("gggg2", "ximenyan1111", 1, "COCOS")
+	hex_str, err := BuildTransaction("ggggxxx", "test1", 1, "COCOS")
 	t.Log(err)
 	t.Log(hex_str)
 }
