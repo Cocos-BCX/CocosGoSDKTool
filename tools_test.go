@@ -39,7 +39,7 @@ func TestDeserializeTransactions(t *testing.T) {
 }
 
 func TestTxsForAddress(t *testing.T) {
-	txs, err := TxsForAddress("gggg1", 10, "263c47271171a5f99c839475f232a742074f848ddaba558e1b151106bf8dfbd1")
+	txs, err := TxsForAddress("ggggxxx") //, 10, "263c47271171a5f99c839475f232a742074f848ddaba558e1b151106bf8dfbd1")
 	byte_s, err := json.Marshal(txs)
 	if err == nil {
 		t.Log(string(byte_s))
@@ -51,16 +51,17 @@ func TestPuk2Addr(t *testing.T) {
 }
 
 func TestAddr2Puk(t *testing.T) {
-	t.Log(AddressToPublic("gggg1"))
+	t.Log(AddressToPublic("ggggxxx"))
 }
 
 func TestGetBlockCount(t *testing.T) {
 	t.Log(Getblockcount())
 }
 
+/*
 func TestGetrawmempool(t *testing.T) {
 	t.Log(Getrawmempool())
-}
+}*/
 
 func TestGetblocktxs(t *testing.T) {
 	txs, err := Getblocktxs(77559)

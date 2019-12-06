@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -20,7 +21,7 @@ import (
 )
 
 type UTXO struct {
-	Value   int64  `json:"value"`
+	Value   uint64 `json:"value"`
 	Address string `json:"address"`
 	Sn      int64  `json:"sn"`
 }
@@ -34,6 +35,10 @@ type Tx struct {
 	ConfirmedAt string      `json:"confirmed_at,omitempty"`
 	Extra       interface{} `json:"extra"`
 }
+
+const (
+	BTCPrecision = 8
+)
 
 func createAssetId(id int64) ObjectId {
 	return ObjectId(fmt.Sprintf("1.3.%d", id))
@@ -199,12 +204,14 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 				}
 			}
 			amount_asset_id := UintVar(amount_asset_id_bytes)
+			asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", amount_asset_id))
+			asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 			from_id := UintVar(from_bytes)
 			to_id := UintVar(to_bytes)
 			from_info := rpc.GetAccountInfo(fmt.Sprintf("1.2.%d", from_id))
 			to_info := rpc.GetAccountInfo(fmt.Sprintf("1.2.%d", to_id))
 			in := UTXO{
-				Value:   amount,
+				Value:   uint64(float64(amount) * asset_precision),
 				Address: from_info.Name,
 				Sn:      amount_asset_id,
 			}
@@ -220,7 +227,7 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 				}*/
 
 			out := UTXO{
-				Value:   amount,
+				Value:   uint64(float64(amount) * asset_precision),
 				Address: to_info.Name,
 				Sn:      amount_asset_id,
 			}
@@ -334,24 +341,31 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 					10, 64)
 				from_info := rpc.GetAccountInfo(tx_op_data.Get("from").String())
 				to_info := rpc.GetAccountInfo(tx_op_data.Get("to").String())
-
+				//asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
+				//asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 				in := UTXO{
-					Value:   out_amount,
+					//Value:   uint64(float64(out_amount) * asset_precision),
+					Value:   uint64(out_amount),
 					Address: from_info.Name,
 					Sn:      out_asset_id,
 				}
 				if fee_asset_id != out_asset_id {
+					//fee_asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
+					//fee_asset_precision := math.Pow10(BTCPrecision - fee_asset_info.Precision)
 					fee_in := UTXO{
-						Value:   fee_amount,
+						// Value:   uint64(float64(fee_amount) * fee_asset_precision),
+						Value:   uint64(fee_amount),
 						Address: from_info.Name,
 						Sn:      fee_asset_id,
 					}
 					inputs = append(inputs, fee_in)
 				} else {
-					in.Value += fee_amount
+					//in.Value += uint64(float64(fee_amount) * asset_precision)
+					in.Value += uint64(fee_amount)
 				}
 				out := UTXO{
-					Value:   out_amount,
+					//Value:   uint64(float64(out_amount) * asset_precision),
+					Value:   uint64(out_amount),
 					Address: to_info.Name,
 					Sn:      out_asset_id,
 				}
@@ -374,12 +388,29 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 	return
 }
 
-func BalanceForAddress(address string) *[]rpc.Balance {
-	return sdk.GetAccountBalances(address)
+type Balance struct {
+	AssetID string
+	Amount  uint64
 }
 
-func BalanceForAddressForCoinCode(address string, symbolOrId string) *rpc.Balance {
-	balances := BalanceForAddress(address)
+func translateBalance(balance rpc.Balance) Balance {
+	return Balance{
+		AssetID: balance.AssetID,
+		Amount:  balance.Amount.Uint64(),
+	}
+}
+
+func BalanceForAddress(address string) []Balance {
+	balances := sdk.GetAccountBalances(address)
+	trans_balances := []Balance{}
+	for _, balance := range *balances {
+		trans_balances = append(trans_balances, translateBalance(balance))
+	}
+	return trans_balances
+}
+
+func BalanceForAddressForCoinCode(address string, symbolOrId string) *Balance {
+	balances := sdk.GetAccountBalances(address)
 	if balances == nil {
 		return nil
 	}
@@ -389,7 +420,8 @@ func BalanceForAddressForCoinCode(address string, symbolOrId string) *rpc.Balanc
 	}
 	for _, balance := range *balances {
 		if balance.AssetID == symbolOrId {
-			return &balance
+			trans_balance := translateBalance(balance)
+			return &trans_balance
 		}
 	}
 	return nil
@@ -467,23 +499,31 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 						10, 64)
 					from_info := rpc.GetAccountInfo(tx_op_data.Get("from").String())
 					to_info := rpc.GetAccountInfo(tx_op_data.Get("to").String())
+					//asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
+					//asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 					in := UTXO{
-						Value:   out_amount,
+						//Value:   uint64(float64(out_amount) * asset_precision),
+						Value:   uint64(out_amount),
 						Address: from_info.Name,
 						Sn:      out_asset_id,
 					}
 					if fee_asset_id != out_asset_id {
+						//fee_asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
+						//fee_asset_precision := math.Pow10(BTCPrecision - fee_asset_info.Precision)
 						fee_in := UTXO{
-							Value:   fee_amount,
+							//Value:   uint64(float64(fee_amount) * fee_asset_precision),
+							Value:   uint64(fee_amount),
 							Address: from_info.Name,
 							Sn:      fee_asset_id,
 						}
 						inputs = append(inputs, fee_in)
 					} else {
-						in.Value += fee_amount
+						//in.Value += uint64(float64(fee_amount) * asset_precision)
+						in.Value += uint64(fee_amount)
 					}
 					out := UTXO{
-						Value:   out_amount,
+						//Value:   uint64(float64(out_amount) * asset_precision),
+						Value:   uint64(out_amount),
 						Address: to_info.Name,
 						Sn:      out_asset_id,
 					}
@@ -550,23 +590,31 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 				10, 64)
 			from_info := rpc.GetAccountInfo(tx_op_data.Get("from").String())
 			to_info := rpc.GetAccountInfo(tx_op_data.Get("to").String())
+			//asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
+			//asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 			in := UTXO{
-				Value:   out_amount,
+				//Value:   uint64(float64(out_amount) * asset_precision),
+				Value:   uint64(out_amount),
 				Address: from_info.Name,
 				Sn:      out_asset_id,
 			}
 			if fee_asset_id != out_asset_id {
+				//fee_asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
+				//fee_asset_precision := math.Pow10(BTCPrecision - fee_asset_info.Precision)
 				fee_in := UTXO{
-					Value:   fee_amount,
+					//Value:   uint64(float64(fee_amount) * fee_asset_precision),
+					Value:   uint64(fee_amount),
 					Address: from_info.Name,
 					Sn:      fee_asset_id,
 				}
 				inputs = append(inputs, fee_in)
 			} else {
-				in.Value += fee_amount
+				//in.Value += uint64(float64(fee_amount) * asset_precision)
+				in.Value += uint64(fee_amount)
 			}
 			out := UTXO{
-				Value:   out_amount,
+				//Value:   uint64(float64(out_amount) * asset_precision),
+				Value:   uint64(fee_amount),
 				Address: to_info.Name,
 				Sn:      out_asset_id,
 			}
@@ -604,6 +652,12 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	}
 	if tk_info == nil {
 		err = errors.New("asset is not exit!")
+		return
+	}
+	precision := math.Pow10(BTCPrecision - tk_info.Precision)
+	if precision > float64(amount) {
+		err = errors.New("amount less than min precision!")
+		return
 	}
 	t := &Transaction{
 		AmountData:     Amount{Amount: amount, AssetID: ObjectId(tk_info.ID)},
