@@ -204,14 +204,15 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 				}
 			}
 			amount_asset_id := UintVar(amount_asset_id_bytes)
-			asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", amount_asset_id))
-			asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
+			//asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", amount_asset_id))
+			//asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 			from_id := UintVar(from_bytes)
 			to_id := UintVar(to_bytes)
 			from_info := rpc.GetAccountInfo(fmt.Sprintf("1.2.%d", from_id))
 			to_info := rpc.GetAccountInfo(fmt.Sprintf("1.2.%d", to_id))
 			in := UTXO{
-				Value:   uint64(float64(amount) * asset_precision),
+				// Value:   uint64(float64(amount) * asset_precision),
+				Value:   uint64(amount),
 				Address: from_info.Name,
 				Sn:      amount_asset_id,
 			}
@@ -227,7 +228,8 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 				}*/
 
 			out := UTXO{
-				Value:   uint64(float64(amount) * asset_precision),
+				// Value:   uint64(float64(amount) * asset_precision),
+				Value:   uint64(amount),
 				Address: to_info.Name,
 				Sn:      amount_asset_id,
 			}
