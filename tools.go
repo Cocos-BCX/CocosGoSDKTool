@@ -656,11 +656,12 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 		err = errors.New("asset is not exit!")
 		return
 	}
-	precision := math.Pow10(BTCPrecision - tk_info.Precision)
-	if precision > float64(amount) {
-		err = errors.New("amount less than min precision!")
-		return
-	}
+	/*
+		precision := math.Pow10(BTCPrecision - tk_info.Precision)
+		if precision > float64(amount) {
+			err = errors.New("amount less than min precision!")
+			return
+		}*/
 	t := &Transaction{
 		AmountData:     Amount{Amount: amount, AssetID: ObjectId(tk_info.ID)},
 		ExtensionsData: []interface{}{},
