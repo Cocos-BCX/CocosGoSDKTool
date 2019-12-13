@@ -11,7 +11,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -686,6 +688,63 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	byte_s = append(cid, byte_s...)
 	tx_raw_hex = hex.EncodeToString(byte_s)
 	return
+}
+
+func CreateAccountByFaucet(name string, faucet_url string, hex_puks ...string) (result string, err error) {
+	var byte_s []byte
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New("CreateAccountByFaucet Is Error!")
+		}
+	}()
+	if len(hex_puks) <= 0 {
+		err = errors.New("puk number is error!!!")
+		return
+	}
+	for idx := 0; idx < len(hex_puks); idx++ {
+		if strings.HasPrefix(hex_puks[idx], "0x") {
+			hex_puks[idx] = hex_puks[idx][2:]
+		}
+		if len(hex_puks[idx]) != 66 {
+			err = errors.New("puk length error!!!")
+			return
+		}
+	}
+	byte_s, err = hex.DecodeString(hex_puks[0])
+	if err != nil {
+		return
+	}
+	active_PubKey := wallet.PublicKey(byte_s)
+	owner_Pubkey := wallet.PublicKey(byte_s)
+	if len(hex_puks) > 1 {
+		byte_s, err = hex.DecodeString(hex_puks[1])
+		if err != nil {
+			return
+		}
+		owner_Pubkey = wallet.PublicKey(byte_s)
+	}
+	params := make(map[string]interface{})
+	account := make(map[string]string)
+	account["name"] = name
+	account["owner_key"] = owner_Pubkey.ToBase58String()
+	account["memo_key"] = active_PubKey.ToBase58String()
+	account["active_key"] = active_PubKey.ToBase58String()
+	account["referror"] = ""
+	params["account"] = account
+	params_data, _ := json.Marshal(params)
+	request, err := http.NewRequest("POST", faucet_url, strings.NewReader(string(params_data)))
+	request.Header.Set("Authorization", "YnVmZW5nQDIwMThidWZlbmc=")
+	//post数据并接收http响应
+	var resp *http.Response
+	resp, err = http.DefaultClient.Do(request)
+	if err != nil {
+		return
+	} else {
+		if byte_s, err = ioutil.ReadAll(resp.Body); err == nil {
+			result = string(byte_s)
+		}
+		return
+	}
 }
 
 func CreateAccount(name, hex_puk string) (tx_hash string, err error) {

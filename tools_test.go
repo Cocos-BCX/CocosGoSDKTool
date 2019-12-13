@@ -7,12 +7,24 @@ import (
 	"testing"
 )
 
+const MAIN_NET_FAUCET = "https://faucet.cocosbcx.net/api/v1/accounts"
+const TEST_FAUCET = "https://test-faucet.cocosbcx.net/api/v1/accounts"
+
 func TestInitSdk(t *testing.T) {
 	sdk.InitSDK("test.cocosbcx.net", true)
 	sdk.Wallet.ImportAccount("ggggxxx", "12345678")
 	sdk.Wallet.SetDefaultAccount("ggggxxx", "12345678")
 	t.Log(rpc.GetDynamicGlobalProperties())
 }
+
+func TestCreateAccountByFaucet(t *testing.T) {
+	t.Log(CreateAccountByFaucet("hicocos1234", MAIN_NET_FAUCET, "0x024ae3a12eaf1c1a1f80979fdca3271c6e830df0ea59df2f1956fe7c692703c6ea"))
+	t.Log(CreateAccountByFaucet("hicocos10086", MAIN_NET_FAUCET,
+		"0x03f9f960dca747a6920162f391d4b99729d1a6e96eef5031c433d7007bcfaabe88",
+		"0x0357560c27f4152ee1e041015c9a844be33ba5b430cd8d9436b67c07a93477c1e7"))
+
+}
+
 func TestGetTransaction(t *testing.T) {
 	tx, err := GetTransaction("4432a6f92b95ade128f52e378f376eec87bfa50230c26584974554d1ab730c66")
 	t.Log(err)
