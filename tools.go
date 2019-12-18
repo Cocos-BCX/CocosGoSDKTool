@@ -28,13 +28,13 @@ type UTXO struct {
 }
 
 type Tx struct {
-	TxHash      string      `json:"tx_hash,omitempty"`
-	Inputs      []UTXO      `json:"inputs"`
-	Outputs     []UTXO      `json:"outputs"`
-	TxAt        string      `json:"tx_at"`
-	BlockNumber int64       `json:"block_no,omitempty"`
-	ConfirmedAt string      `json:"confirmed_at,omitempty"`
-	Extra       interface{} `json:"extra"`
+	TxHash      string            `json:"tx_hash,omitempty"`
+	Inputs      []UTXO            `json:"inputs"`
+	Outputs     []UTXO            `json:"outputs"`
+	TxAt        string            `json:"tx_at"`
+	BlockNumber int64             `json:"block_no,omitempty"`
+	ConfirmedAt string            `json:"confirmed_at,omitempty"`
+	Extra       map[string]string `json:"extra"`
 }
 
 const (
@@ -243,7 +243,7 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 		Inputs:  inputs,
 		Outputs: outputs,
 		TxAt:    tx_at,
-		Extra:   []interface{}{},
+		Extra:   make(map[string]string),
 	}
 	return
 }
@@ -352,18 +352,7 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 					Address: from_info.Name,
 					Sn:      out_asset_id,
 				}
-				if fee_asset_id != out_asset_id {
-					//fee_asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
-					//fee_asset_precision := math.Pow10(BTCPrecision - fee_asset_info.Precision)
-					fee_in := UTXO{
-						// Value:   uint64(float64(fee_amount) * fee_asset_precision),
-						Value:   uint64(fee_amount),
-						Address: from_info.Name,
-						Sn:      fee_asset_id,
-					}
-					inputs = append(inputs, fee_in)
-				} else {
-					//in.Value += uint64(float64(fee_amount) * asset_precision)
+				if fee_asset_id == out_asset_id {
 					in.Value += uint64(fee_amount)
 				}
 				out := UTXO{
@@ -382,7 +371,7 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 					Outputs:     outputs,
 					TxAt:        tx_at,
 					ConfirmedAt: block.Timestamp,
-					Extra:       []interface{}{},
+					Extra:       make(map[string]string),
 				}
 				txs = append(txs, tx)
 			}
@@ -510,18 +499,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 						Address: from_info.Name,
 						Sn:      out_asset_id,
 					}
-					if fee_asset_id != out_asset_id {
-						//fee_asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
-						//fee_asset_precision := math.Pow10(BTCPrecision - fee_asset_info.Precision)
-						fee_in := UTXO{
-							//Value:   uint64(float64(fee_amount) * fee_asset_precision),
-							Value:   uint64(fee_amount),
-							Address: from_info.Name,
-							Sn:      fee_asset_id,
-						}
-						inputs = append(inputs, fee_in)
-					} else {
-						//in.Value += uint64(float64(fee_amount) * asset_precision)
+					if fee_asset_id == out_asset_id {
 						in.Value += uint64(fee_amount)
 					}
 					out := UTXO{
@@ -541,7 +519,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 						TxAt:        block.Timestamp,
 						BlockNumber: block_num,
 						ConfirmedAt: tx_at,
-						Extra:       []interface{}{},
+						Extra:       make(map[string]string),
 					}
 					txs = append(txs, tx)
 					if len(txs) >= limit {
@@ -593,31 +571,17 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 				10, 64)
 			from_info := rpc.GetAccountInfo(tx_op_data.Get("from").String())
 			to_info := rpc.GetAccountInfo(tx_op_data.Get("to").String())
-			//asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
-			//asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 			in := UTXO{
 				//Value:   uint64(float64(out_amount) * asset_precision),
 				Value:   uint64(out_amount),
 				Address: from_info.Name,
 				Sn:      out_asset_id,
 			}
-			if fee_asset_id != out_asset_id {
-				//fee_asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
-				//fee_asset_precision := math.Pow10(BTCPrecision - fee_asset_info.Precision)
-				fee_in := UTXO{
-					//Value:   uint64(float64(fee_amount) * fee_asset_precision),
-					Value:   uint64(fee_amount),
-					Address: from_info.Name,
-					Sn:      fee_asset_id,
-				}
-				inputs = append(inputs, fee_in)
-			} else {
-				//in.Value += uint64(float64(fee_amount) * asset_precision)
+			if fee_asset_id == out_asset_id {
 				in.Value += uint64(fee_amount)
 			}
 			out := UTXO{
-				//Value:   uint64(float64(out_amount) * asset_precision),
-				Value:   uint64(fee_amount),
+				Value:   uint64(out_amount),
 				Address: to_info.Name,
 				Sn:      out_asset_id,
 			}
@@ -632,7 +596,7 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 				BlockNumber: block_info.BlockNum,
 				ConfirmedAt: tx_at,
 				TxAt:        block.Timestamp,
-				Extra:       []interface{}{},
+				Extra:       make(map[string]string),
 			}
 		}
 	}
