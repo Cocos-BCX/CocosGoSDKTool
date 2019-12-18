@@ -393,13 +393,13 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 
 type Balance struct {
 	AssetID string
-	Amount  uint64
+	Amount  int64
 }
 
 func translateBalance(balance rpc.Balance) Balance {
 	return Balance{
 		AssetID: balance.AssetID,
-		Amount:  balance.Amount.Uint64(),
+		Amount:  balance.Amount.Int64(),
 	}
 }
 
