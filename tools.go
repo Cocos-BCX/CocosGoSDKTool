@@ -249,9 +249,12 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 }
 
 func UnsignedTxHash(tx_raw_hex string) (tx_hash string) {
-	byte_s, _ := hex.DecodeString(tx_raw_hex[64:])
-	hash := sha256.Sum256(byte_s)
-	tx_hash = hex.EncodeToString(hash[:])
+	if data_bytes, err := hex.DecodeString(tx_raw_hex); err == nil {
+		sha := sha256.New()
+		sha.Write(data_bytes)
+		raw_data := sha.Sum(nil)
+		tx_hash = hex.EncodeToString(raw_data)
+	}
 	return
 }
 
@@ -747,8 +750,7 @@ func CreateAccount(name, hex_puk string) (tx_hash string, err error) {
 func SignTransaction(tx_raw_hex string, signatures []string) (tx *Tx, e error) {
 	sign_tx, err := DeserializeTransactions(tx_raw_hex)
 	if err != nil {
-		e = err
-		return
+		return tx, err
 	}
 	if byte_s, err := json.Marshal(sign_tx); err == nil {
 		tx_json := gjson.ParseBytes(byte_s)
@@ -757,16 +759,17 @@ func SignTransaction(tx_raw_hex string, signatures []string) (tx *Tx, e error) {
 		for _, signature := range signatures {
 			if !wallet.VerifySignature(tx_raw_hex, signature, acct_info.GetActivePuKey()) {
 				err = errors.New("Verify Signature error!")
-				return
+				return tx, err
 			}
 		}
 		sign_tx.Signatures = append(sign_tx.Signatures, signatures...)
 		if hash, err := rpc.BroadcastTransaction(sign_tx); err == nil {
 			tx, err = GetTransaction(hash)
 			return tx, err
+		} else {
+			return tx, err
 		}
 	} else {
-		e = err
+		return tx, err
 	}
-	return
 }
