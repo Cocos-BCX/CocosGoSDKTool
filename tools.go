@@ -537,6 +537,12 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 }
 
 func GetTransaction(tx_hash string) (tx *Tx, err error) {
+	defer func() {
+		if recover() != nil {
+			tx = nil
+			err = errors.New("Get Transaction Error!")
+		}
+	}()
 	tx_info := sdk.GetTransactionById(tx_hash)
 	block_info := sdk.GetTransactionInBlock(tx_hash)
 	block := sdk.GetBlock(block_info.BlockNum)
@@ -576,7 +582,6 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 			from_info := rpc.GetAccountInfo(tx_op_data.Get("from").String())
 			to_info := rpc.GetAccountInfo(tx_op_data.Get("to").String())
 			in := UTXO{
-				//Value:   uint64(float64(out_amount) * asset_precision),
 				Value:   uint64(out_amount),
 				Address: from_info.Name,
 				Sn:      out_asset_id,
@@ -625,12 +630,6 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 		err = errors.New("asset is not exit!")
 		return
 	}
-	/*
-		precision := math.Pow10(BTCPrecision - tk_info.Precision)
-		if precision > float64(amount) {
-			err = errors.New("amount less than min precision!")
-			return
-		}*/
 	t := &Transaction{
 		AmountData:     Amount{Amount: amount, AssetID: ObjectId(tk_info.ID)},
 		ExtensionsData: []interface{}{},
@@ -772,7 +771,12 @@ func SignTransaction(tx_raw_hex string, signatures []string) (tx *Tx, e error) {
 		}
 		sign_tx.Signatures = append(sign_tx.Signatures, signatures...)
 		if hash, err := rpc.BroadcastTransaction(sign_tx); err == nil {
-			tx, err = GetTransaction(hash)
+			for i := 0; i <= 20; i++ {
+				if tx, err = GetTransaction(hash); err == nil {
+					return tx, err
+				}
+				time.Sleep(time.Second)
+			}
 			return tx, err
 		} else {
 			return tx, err
