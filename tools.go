@@ -143,7 +143,7 @@ func DeserializeTransactions(tx_raw_hex string) (sign_tx *wallet.Signed_Transact
 
 func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 	var byte_s []byte
-	tx_hash := UnsignedTxHash(tx_raw_hex)
+	tx_hash := GetTXHash(tx_raw_hex)
 	/*if tx, err = GetTransaction(tx_hash); err == nil {
 		return
 	}*/
@@ -249,6 +249,7 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 }
 
 func UnsignedTxHash(tx_raw_hex string) (tx_hash string) {
+
 	if data_bytes, err := hex.DecodeString(tx_raw_hex); err == nil {
 		sha := sha256.New()
 		sha.Write(data_bytes)
@@ -745,6 +746,13 @@ func CreateAccount(name, hex_puk string) (tx_hash string, err error) {
 	c := CreateRegisterData(puk.ToBase58String(), puk.ToBase58String(), name, sdk.Wallet.Default.Info.ID, sdk.Wallet.Default.Info.ID)
 	tx_hash, err = sdk.Wallet.SignAndSendTX(OP_CREATE_ACCOUNT, c)
 	return tx_hash, err
+}
+
+func GetTXHash(tx_raw_hex string) (tx_hash string) {
+	byte_s, _ := hex.DecodeString(tx_raw_hex[64:])
+	hash := sha256.Sum256(byte_s)
+	tx_hash = hex.EncodeToString(hash[:])
+	return
 }
 
 func SignTransaction(tx_raw_hex string, signatures []string) (tx *Tx, e error) {
