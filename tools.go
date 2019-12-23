@@ -209,12 +209,12 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 			//asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 			from_id := UintVar(from_bytes)
 			to_id := UintVar(to_bytes)
-			from_info := rpc.GetAccountInfo(fmt.Sprintf("1.2.%d", from_id))
-			to_info := rpc.GetAccountInfo(fmt.Sprintf("1.2.%d", to_id))
+			//from_info := rpc.GetAccountInfo(fmt.Sprintf("1.2.%d", from_id))
+			//to_info := rpc.GetAccountInfo(fmt.Sprintf("1.2.%d", to_id))
 			in := UTXO{
 				// Value:   uint64(float64(amount) * asset_precision),
 				Value:   uint64(amount),
-				Address: from_info.Name,
+				Address: fmt.Sprintf("1.2.%d", from_id),
 				Sn:      amount_asset_id,
 			}
 			/*
@@ -231,7 +231,7 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 			out := UTXO{
 				// Value:   uint64(float64(amount) * asset_precision),
 				Value:   uint64(amount),
-				Address: to_info.Name,
+				Address: fmt.Sprintf("1.2.%d", to_id),
 				Sn:      amount_asset_id,
 			}
 			inputs = append(inputs, in)
@@ -612,11 +612,14 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 	return
 }
 
-func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_hex string, err error) {
+func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_hex string,acct_infos map[string]string, err error) {
 	asset_id := COCOS_ID
+	acct_infos = make(map[string]string)
 	var tk_info *rpc.TokenInfo
 	from_info := rpc.GetAccountInfoByName(from)
 	to_info := rpc.GetAccountInfoByName(to)
+	acct_infos[from_info.ID] = from
+	acct_infos[to_info.ID] =  to
 	if from_info == nil || to_info == nil {
 		err = errors.New("from or to is not exits!!")
 		return
