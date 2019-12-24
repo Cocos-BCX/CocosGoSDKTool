@@ -521,10 +521,10 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 						ConfirmedAt: tx_at,
 						Extra:       make(map[string]string),
 					}
-					txs = append(txs, tx)
 					if len(txs) >= limit {
 						break
 					}
+					txs = append(txs, tx)
 				}
 			}
 		}
