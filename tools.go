@@ -451,7 +451,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 	txs = []Tx{}
 	tx_infos := sdk.GetAccountHistorys(acct_info.ID)
 	is_start := false
-	for idx:=len(tx_infos)-1;idx >= 0;idx--{
+	for idx:=0;idx < len(tx_infos);idx++{
 		tx_info := tx_infos[idx]
 		if byte_s, err := json.Marshal(tx_info); err == nil {
 			tx := gjson.ParseBytes(byte_s)
@@ -537,7 +537,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 					if len(txs) >= limit {
 						break
 					}
-					txs = append(txs, tx)
+					txs = append(txs , tx)
 				}
 			}
 		}
