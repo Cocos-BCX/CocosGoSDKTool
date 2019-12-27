@@ -449,7 +449,10 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 		}
 	}
 	txs = []Tx{}
-	for _, tx_info := range sdk.GetAccountHistorys(acct_info.ID) {
+	tx_infos := sdk.GetAccountHistorys(acct_info.ID)
+	is_start := false
+	for idx:=len(tx_infos)-1;idx >= 0;idx--{
+		tx_info := tx_infos[idx]
 		if byte_s, err := json.Marshal(tx_info); err == nil {
 			tx := gjson.ParseBytes(byte_s)
 			operation := tx.Get("op")
@@ -463,6 +466,16 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 			tx_info := block.Transactions[trx_in_block]
 			if byte_s, err := json.Marshal(tx_info); err == nil {
 				tx := gjson.ParseBytes(byte_s)
+				if !is_start{
+					if since_hash != ""{
+						if tx.Get("0").String() == since_hash {
+							is_start = true
+						}
+						continue
+					}else{
+						is_start = true
+					}
+				}
 				if since_hash != "" &&
 					tx.Get("0").String() == since_hash {
 					break
