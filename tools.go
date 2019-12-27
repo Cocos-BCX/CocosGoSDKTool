@@ -627,12 +627,12 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	var tk_info *rpc.TokenInfo
 	from_info := rpc.GetAccountInfoByName(from)
 	to_info := rpc.GetAccountInfoByName(to)
-	acct_infos[from_info.ID] = from
-	acct_infos[to_info.ID] =  to
 	if from_info == nil || to_info == nil {
 		err = errors.New("from or to is not exits!!")
 		return
 	}
+	acct_infos[from_info.ID] = from
+	acct_infos[to_info.ID] =  to
 	if len(symbol) > 0 {
 		tk_info = rpc.GetTokenInfoBySymbol(symbol[0])
 	} else {
