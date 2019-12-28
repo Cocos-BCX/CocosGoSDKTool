@@ -451,7 +451,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 	txs = []Tx{}
 	tx_infos := sdk.GetAccountHistorys(acct_info.ID)
 	is_start := false
-	for idx:=len(tx_infos)-1;idx >= 0;idx--{
+	for idx:=0;idx < len(tx_infos);idx++{
 		tx_info := tx_infos[idx]
 		if byte_s, err := json.Marshal(tx_info); err == nil {
 			tx := gjson.ParseBytes(byte_s)
@@ -537,7 +537,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 					if len(txs) >= limit {
 						break
 					}
-					txs = append(txs, tx)
+					txs = append(txs , tx)
 				}
 			}
 		}
@@ -627,12 +627,12 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	var tk_info *rpc.TokenInfo
 	from_info := rpc.GetAccountInfoByName(from)
 	to_info := rpc.GetAccountInfoByName(to)
-	acct_infos[from_info.ID] = from
-	acct_infos[to_info.ID] =  to
 	if from_info == nil || to_info == nil {
 		err = errors.New("from or to is not exits!!")
 		return
 	}
+	acct_infos[from_info.ID] = from
+	acct_infos[to_info.ID] =  to
 	if len(symbol) > 0 {
 		tk_info = rpc.GetTokenInfoBySymbol(symbol[0])
 	} else {
