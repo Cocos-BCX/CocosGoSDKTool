@@ -64,7 +64,7 @@ func DeserializeTransactions(tx_raw_hex string) (sign_tx *wallet.Signed_Transact
 	sign_tx.ExtensionsData = []interface{}{}
 	time_bytes := byte_s[6:10]
 	uinx_time := UintVar(time_bytes)
-	sign_tx.Expiration = time.Unix(int64(uinx_time), 0).In(UTCZone).Format(TIME_FORMAT)
+	sign_tx.Expiration = Expiration(time.Unix(int64(uinx_time), 0).In(UTCZone).Format(TIME_FORMAT))
 	byte_s = byte_s[10:]
 	op_len_bytes := []byte{byte_s[0]}
 	for i := 0; byte_s[i] > 0x80; i++ {
@@ -612,8 +612,8 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 				Inputs:      inputs,
 				Outputs:     outputs,
 				BlockNumber: block_info.BlockNum,
-				ConfirmedAt: tx_at,
-				TxAt:        block.Timestamp,
+				ConfirmedAt: block.Timestamp,
+				TxAt:        tx_at,
 				Extra:       make(map[string]string),
 			}
 		}
@@ -654,7 +654,7 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	st := &wallet.Signed_Transaction{
 		RefBlockNum:    dgp.Get_ref_block_num(),
 		RefBlockPrefix: dgp.Get_ref_block_prefix(),
-		Expiration:     time.Unix(time.Now().Unix(), 0).Format(TIME_FORMAT),
+		Expiration:     Expiration(time.Unix(time.Now().Unix(), 0).Format(TIME_FORMAT)),
 		Operations:     []Operation{op},
 		ExtensionsData: []interface{}{},
 		Signatures:     []string{},
