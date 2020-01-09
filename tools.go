@@ -654,7 +654,7 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	st := &wallet.Signed_Transaction{
 		RefBlockNum:    dgp.Get_ref_block_num(),
 		RefBlockPrefix: dgp.Get_ref_block_prefix(),
-		Expiration:     Expiration(time.Unix(time.Now().Unix(), 0).Format(TIME_FORMAT)),
+		Expiration:     Expiration(dgp.Time),
 		Operations:     []Operation{op},
 		ExtensionsData: []interface{}{},
 		Signatures:     []string{},
