@@ -529,9 +529,9 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 						TxHash:      tx_hash,
 						Inputs:      inputs,
 						Outputs:     outputs,
-						TxAt:        block.Timestamp,
+						TxAt:        tx_at,
 						BlockNumber: block_num,
-						ConfirmedAt: tx_at,
+						ConfirmedAt: block.Timestamp,
 						Extra:       make(map[string]string),
 					}
 					if len(txs) >= limit {
