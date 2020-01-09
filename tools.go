@@ -328,7 +328,7 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 			inputs := []UTXO{}
 			outputs := []UTXO{}
 
-			tx_at := tx.Get("1.expiration").String()
+			//tx_at := tx.Get("1.expiration").String()
 			for index, operation := range tx_operations {
 				tx_op_code := operation.Get("0").Int()
 				tx_op_data := operation.Get("1")
@@ -373,7 +373,7 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 					TxHash:      tx_hash,
 					Inputs:      inputs,
 					Outputs:     outputs,
-					TxAt:        tx_at,
+					TxAt:         block.Timestamp,
 					ConfirmedAt: block.Timestamp,
 					Extra:       make(map[string]string),
 				}
@@ -481,7 +481,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 					break
 				}
 				tx_hash := tx.Get("0").String()
-				tx_at := tx.Get("1.expiration").String()
+				//tx_at := tx.Get("1.expiration").String()
 				tx_operations := tx.Get("1.operations").Array()
 				inputs := []UTXO{}
 				outputs := []UTXO{}
@@ -529,7 +529,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 						TxHash:      tx_hash,
 						Inputs:      inputs,
 						Outputs:     outputs,
-						TxAt:        tx_at,
+						TxAt:         block.Timestamp,
 						BlockNumber: block_num,
 						ConfirmedAt: block.Timestamp,
 						Extra:       make(map[string]string),
@@ -567,7 +567,7 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 	}()
 	if byte_s, err := json.Marshal(tx_info); err == nil {
 		tx_data := gjson.ParseBytes(byte_s)
-		tx_at := tx_data.Get("expiration").String()
+		//tx_at := tx_data.Get("expiration").String()
 		tx_operations := tx_data.Get("operations").Array()
 		inputs := []UTXO{}
 		outputs := []UTXO{}
@@ -613,7 +613,7 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 				Outputs:     outputs,
 				BlockNumber: block_info.BlockNum,
 				ConfirmedAt: block.Timestamp,
-				TxAt:        tx_at,
+				TxAt:        block.Timestamp,
 				Extra:       make(map[string]string),
 			}
 		}
@@ -654,7 +654,7 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	st := &wallet.Signed_Transaction{
 		RefBlockNum:    dgp.Get_ref_block_num(),
 		RefBlockPrefix: dgp.Get_ref_block_prefix(),
-		Expiration:     Expiration(dgp.Time),
+		Expiration:     ToExpiration(dgp.Time),
 		Operations:     []Operation{op},
 		ExtensionsData: []interface{}{},
 		Signatures:     []string{},
