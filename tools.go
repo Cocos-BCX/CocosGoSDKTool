@@ -652,7 +652,7 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 	op := Operation{OP_TRANSFER, t}
 	dgp := rpc.GetDynamicGlobalProperties()
 	timestamp, _ := time.Parse(TIME_FORMAT, dgp.Time)
-	expiration := Expiration(time.Unix(timestamp.Unix()+120,0).In(UTCZone).Format(TIME_FORMAT))
+	expiration := Expiration(time.Unix(timestamp.Unix()+60*60*2,0).In(UTCZone).Format(TIME_FORMAT))
 	st := &wallet.Signed_Transaction{
 		RefBlockNum:    dgp.Get_ref_block_num(),
 		RefBlockPrefix: dgp.Get_ref_block_prefix(),
