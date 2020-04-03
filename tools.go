@@ -165,6 +165,7 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 	byte_s = byte_s[len(op_len_bytes):]
 	inputs := []UTXO{}
 	outputs := []UTXO{}
+	memo := ""
 	for i := 0; i < int(op_len); i++ {
 		if byte_s[0] == byte(OP_TRANSFER) {
 			byte_s = byte_s[1:]
@@ -186,6 +187,8 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 						memo_len_bytes = append(op_len_bytes, byte_s[i+1])
 					}
 					memo_len := Intvar(memo_len_bytes)
+					memo_bytes := byte_s[len(op_len_bytes):len(op_len_bytes)+int(memo_len)]
+					memo = string(memo_bytes)
 					byte_s = byte_s[len(op_len_bytes)+int(memo_len):]
 					//fee_amount += c_fees[OP_TRANSFER].Get("price_per_kbyte").Int() * (2 + int64(len(memo_len_bytes)) + memo_len) / 1024
 				} else if byte_s[0] == 1 {
@@ -245,6 +248,7 @@ func Deserialize(tx_raw_hex string) (tx *Tx, err error) {
 		TxAt:    tx_at,
 		Extra:   make(map[string]string),
 	}
+	tx.Extra["memo"] = memo
 	return
 }
 
@@ -329,6 +333,7 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 			outputs := []UTXO{}
 
 			//tx_at := tx.Get("1.expiration").String()
+			memo := ""
 			for index, operation := range tx_operations {
 				tx_op_code := operation.Get("0").Int()
 				tx_op_data := operation.Get("1")
@@ -348,6 +353,10 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 					10, 64)
 				from_info := rpc.GetAccountInfo(tx_op_data.Get("from").String())
 				to_info := rpc.GetAccountInfo(tx_op_data.Get("to").String())
+				memo_sign := tx_op_data.Get("memo.0").Uint()
+				if memo_sign == 0{
+					memo = tx_op_data.Get("memo.1").String()
+				}
 				//asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
 				//asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 				in := UTXO{
@@ -377,6 +386,7 @@ func Getblocktxs(count int64) (txs []Tx, err error) {
 					ConfirmedAt: block.Timestamp,
 					Extra:       make(map[string]string),
 				}
+				tx.Extra["memo"] = memo
 				txs = append(txs, tx)
 			}
 		}
@@ -485,6 +495,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 				tx_operations := tx.Get("1.operations").Array()
 				inputs := []UTXO{}
 				outputs := []UTXO{}
+				memo := ""
 				for index, operation := range tx_operations {
 					tx_op_code := operation.Get("0").Int()
 					tx_op_data := operation.Get("1")
@@ -504,6 +515,10 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 						10, 64)
 					from_info := rpc.GetAccountInfo(tx_op_data.Get("from").String())
 					to_info := rpc.GetAccountInfo(tx_op_data.Get("to").String())
+					memo_sign := tx_op_data.Get("memo.0").Uint()
+					if memo_sign == 0{
+						memo = tx_op_data.Get("memo.1").String()
+					}
 					//asset_info := rpc.GetTokenInfo(fmt.Sprintf("1.3.%d", out_asset_id))
 					//asset_precision := math.Pow10(BTCPrecision - asset_info.Precision)
 					in := UTXO{
@@ -534,6 +549,7 @@ func TxsForAddress(address string, args ...interface{}) (txs []Tx, err error) {
 						ConfirmedAt: block.Timestamp,
 						Extra:       make(map[string]string),
 					}
+					tx.Extra["memo"] = memo
 					if len(txs) >= limit {
 						break
 					}
@@ -571,6 +587,7 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 		tx_operations := tx_data.Get("operations").Array()
 		inputs := []UTXO{}
 		outputs := []UTXO{}
+		memo := ""
 		for index, operation := range tx_operations {
 			tx_op_code := operation.Get("0")
 			tx_op_data := operation.Get("1")
@@ -590,6 +607,10 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 				10, 64)
 			from_info := rpc.GetAccountInfo(tx_op_data.Get("from").String())
 			to_info := rpc.GetAccountInfo(tx_op_data.Get("to").String())
+			memo_sign := tx_op_data.Get("memo.0").Uint()
+			if memo_sign == 0{
+				memo = tx_op_data.Get("memo.1").String()
+			}
 			in := UTXO{
 				Value:   uint64(out_amount),
 				Address: from_info.Name,
@@ -616,12 +637,13 @@ func GetTransaction(tx_hash string) (tx *Tx, err error) {
 				TxAt:        block.Timestamp,
 				Extra:       make(map[string]string),
 			}
+			tx.Extra["memo"] = memo
 		}
 	}
 	return
 }
-
-func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_hex string,acct_infos map[string]string, err error) {
+/*memo 必须传，没有可以传空字符串*/
+func BuildTransaction(from, to, memo string, amount uint64, symbol ...string) (tx_raw_hex string,acct_infos map[string]string, err error) {
 	asset_id := COCOS_ID
 	acct_infos = make(map[string]string)
 	var tk_info *rpc.TokenInfo
@@ -647,7 +669,7 @@ func BuildTransaction(from, to string, amount uint64, symbol ...string) (tx_raw_
 		ExtensionsData: []interface{}{},
 		From:           ObjectId(from_info.ID),
 		To:             ObjectId(to_info.ID),
-		MemoData:       nil,
+		MemoData:       &OpMemo{Int(0), String(memo)},
 	}
 	op := Operation{OP_TRANSFER, t}
 	dgp := rpc.GetDynamicGlobalProperties()
